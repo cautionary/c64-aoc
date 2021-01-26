@@ -15,7 +15,7 @@
 
 d01p01          jsr clear_screen
                 jsr test_init
-                ;jsr mult_results
+                jsr mult_results
                 jsr print_answer
 forever         jmp forever
 
@@ -31,7 +31,9 @@ current_z       !byte $00                   ;we are in the z loop the longest, s
 x_loop          !byte $00                   ;since we have more than 256 bytes of input data need to keep track \
 y_loop          !byte $00                   ;  of which block of input we are in for both x and y. these should only be 0 or 1
 z_loop          !byte $00
-
+multiplier      !byte $00, $00
+multiplicand    !byte $00, $00, $00, $00
+product         !byte $00, $00, $00, $00, $00, $00
 
 clear_screen    lda #$20     ; #$20 is the spacebar screencode
                 sta $0400,x  ; fill four areas with 256 spacebar characters
@@ -67,14 +69,17 @@ test_loop       lda #$E4
                 beq second_z
                 lda input,x
                 sta subtr_num2
+                sta test_num_1
                 inx
                 lda input,x
                 jmp z_loaded
 second_z        lda input2,x
                 sta subtr_num2
+                sta test_num_1
                 inx
                 lda input2,x
 z_loaded        sta subtr_num2+1
+                sta test_num_1+1
                 inx
                 stx current_z
                 cpx #$FE
@@ -96,15 +101,19 @@ test_nums       lda x_loop          ;check if we are
                 beq second_x        ;   second chunk of input
 first_x         lda input,x         ;load the number from input and
                 sta subtr_num2      ;   and use it as the lower number
+                sta test_num_2
                 inx                 ;   in our subtraction list
                 lda input,x
                 jmp x_loaded
 second_x        lda input2,x   
                 sta subtr_num2
+                sta test_num_2
                 inx
                 lda input2,x
 x_loaded        sta subtr_num2+1
+                sta test_num_2+1
                 jsr sub_16b         ;now that the numbers are loaded, jump to the subtraction routine
+                bcc inc_then_next_x ;if carry is clear, our subtraction is less than 0 and there is no way this x can work
                 inx                 ;move on to the next input byte for later
                 ; set y to x + 2 so we aren't comparing a num to itself or repeating previous pairs
                 txa
@@ -119,16 +128,19 @@ cmp_snd_nums    lda y_loop          ;start of the loop for the second number
                 cmp #$01            ;similar to x values, we check if we need to pull from input
                 beq second_y        ;   or input2 and load them into the a register
 first_y         lda input,y         
+                sta test_num_3
                 iny
                 cmp subtr_result    ;then we compare them to the result of our subtraction problem
                 bne no_match        ;   where we took 2020 - x
                 lda input,y
                 jmp y_loaded
 second_y        lda input2,y
+                sta test_num_3
                 iny
                 cmp subtr_result
                 bne no_match
                 lda input2,y
+                sta test_num_3+1
 y_loaded        cmp subtr_result+1
                 beq match           ;if we match here we are done and have found the answer!
 no_match        iny                 ;otherwise, we move on to the next y
@@ -142,13 +154,17 @@ no_match        iny                 ;otherwise, we move on to the next y
 next_x          cpx #$FE            ;and then do the same checks for x
                 beq inc_x_loop
                 cpx #$92
-                bne test_nums
+                bne next_x_loop     ;our test_nums loop is too far away, so branching to next_x_loop then jumping to test_nums
                 lda x_loop
                 cmp #$01
-                bne test_nums
+                bne next_x_loop
 next_z_loop     jmp test_loop
 match           rts                 
 
+inc_then_next_x inx
+                jmp next_x        
+
+next_x_loop     jmp test_nums
 
 inc_y_loop      lda #$01            ;sets the y_loop to 1 so we start checking input2
                 sta y_loop
@@ -158,32 +174,68 @@ inc_x_loop      lda #$01            ;sets x_loop to 1 so we start checking input
                 sta x_loop
                 jmp test_nums
 
-mult_results    lda #$00            ;after we find our values that add up to 2020
-                sta answer_prod+2   ;   this routine multiplies them together
-                ldx #$10            ;   and stores the result in a 4 byte area called answer_prod
-l1              lsr subtr_result+1
-                ror subtr_result
-                bcc l2
-                tay
+mult_results    lda test_num_1      ;after we have our result, we'll multiply them together in two operations
+                sta multiplier      ;first we'll take test_num_1 and store it in multiplier
+                lda test_num_1+1
+                sta multiplier+1
+                lda test_num_2      ;and take test_num_2 and store it in multiplicand
+                sta multiplicand
+                lda test_num_2+1
+                sta multiplicand+1  
+                lda #$00            ;but since test_num_2 is 16 bit and our multiplication routine takes a 32-bit
+                sta multiplicand+2  ;   number as a multiplicand, so padding it with two extra zero bytes
+                sta multiplicand+3
+                jsr do_mult         ;calling in the multiplication routine
+                lda product         ;now that multiplication is done, product contains the result
+                sta multiplicand    ;   of multiplying test_num_1 and test_num_2
+                lda product+1       ;   so now we multiply the product of that with test_num_3
+                sta multiplicand+1  ;   setting product as multiplicand because it is 32-bit
+                lda product+2
+                sta multiplicand+2
+                lda product+3
+                sta multiplicand+3
+                lda test_num_3      ;   setting test_num_3 as multiplier because it is 16-bit
+                sta multiplier
+                lda test_num_3+1
+                sta multiplier+1
+                jsr do_mult         ;call the multiplication routine and we are done
+                rts
+                
+do_mult         lda #$00            ;after we find our values that add up to 2020
+                sta product         ;   this routine multiplies them together
+                sta product+1       ;   and stores the result in a 6 byte area called product
+                sta product+2       ;first, zero out the product since we run this multiple times
+                sta product+3
+                sta product+4
+                sta product+5
+                ldx #$20            ;setting x to 32-dec since we have a 32-bit multiplicand 
+l1              lsr multiplicand+3
+                ror multiplicand+2
+                ror multiplicand+1
+                ror multiplicand    ;shift the entire multiplicand one to the right and 
+                bcc l2              ;   check if the lowest bit is 1. if so we need to add in the multiplier
+                tay                 ;a contains the high byte of our product, dump it in y temporarily
                 clc
-                lda subtr_num2
-                adc answer_prod+2
-                sta answer_prod+2
-                tya
-                adc subtr_num2+1
-l2              ror 
-                ror answer_prod+2
-                ror answer_prod+1
-                ror answer_prod
-                dex
+                lda multiplier      ;load the low byte of the multiplier 
+                adc product+4       ;   and add it to the second highest byte of the product
+                sta product+4    
+                tya                 ;get our high byte of our product back from y
+                adc multiplier+1    ;add in the high byte of the multiplier
+l2              ror                 ;rotate the product down the chain
+                ror product+4
+                ror product+3
+                ror product+2
+                ror product+1
+                ror product
+                dex                 ;decrement x and when we are done with all 32 bits we are done
                 bne l1
-                sta answer_prod+3
+                sta product+5       ;store that high byte of our product once we're all done
                 rts
 
 
 print_answer    ldx #$05            ;takes the value from answer_prod
                 ldy #$00            ;   splits each byte into two nibbles 
-loop_text       lda subtr_num1,x   ;   converts those to their petscii value
+loop_text       lda product,x   ;   converts those to their petscii value
                 and #$F0            
                 lsr
                 lsr
@@ -192,7 +244,7 @@ loop_text       lda subtr_num1,x   ;   converts those to their petscii value
                 jsr prep_char
                 sta $0630,y         ; ...and store in screen ram near the center
                 iny
-                lda subtr_num1,x
+                lda product,x
                 and #$0F
                 jsr prep_char
                 sta $0630,y
@@ -215,4 +267,5 @@ prep_let        sec                 ;if greater or equal then subtract 9 to get 
                 rts
 
 ;store our input in a separate file
+;day 1 part 2 uses the same input as part 1
 !source "input-d01p01.asm"
