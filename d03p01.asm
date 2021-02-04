@@ -49,7 +49,7 @@ init_test       ldy #$00            ;the y register is going to keep track of wh
                 lda #$10
                 sta cur_char_pos+1  ;high byte of our pointer
 inc_row         clc                  
-                lda cur_char_pos    ;there are 31-dec/$1F-hex bytes in each row, so we add $20 to get to the start of the next row
+                lda cur_char_pos    ;there are 31-dec/$1F-hex bytes in each row, so we add $1F to get to the start of the next row
                 adc #$1F           
                 sta cur_char_pos    
                 lda cur_char_pos+1  ;we added $1F to the low byte, so next ad $00 to the high byte with the carry
