@@ -11,6 +11,11 @@ Both part 1 and part 2 will output the answer in hex, and it will need to be con
 
 TODO: write a routine to convert hex to dec and it will undoubtedly be useful for other days as well.
 
+## Day 02
+Day 2's input is a list of strings that contain alphanumeric and symbol characters. The file `input-d02.asm` shows how to get acme to treat them as PETSCII strings. Add a `!` character at the end, and that tells the program that it is done parsing the input. 
+
+Only part 1 has been solved so far. Similar to Day 01, the answer is output in hex and will be need to converted to decimal to enter the answer in AoC.
+
 ## Day 03
 
 The input of Day 03 was a list of strings containing "#" or "." characters. The file `input-d03.asm` shows how to input them as PETSCII strings.  Obviously, it would have been more efficient to store them as single bits, but we are trying to do as little pre-processing of the input as possible, and we have plenty of memory to store the raw strings.
