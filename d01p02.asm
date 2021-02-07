@@ -17,17 +17,34 @@ d01p01          jsr clear_screen
                 jsr test_init
                 jsr mult_results
                 lda product
-                sta answer
+                sta num_hex
                 lda product+1
-                sta answer+1
+                sta num_hex+1
                 lda product+2
-                sta answer+2
+                sta num_hex+2
                 lda product+3
-                sta answer+3
+                sta num_hex+3
                 lda product+4
-                sta answer+4
+                sta num_hex+4
                 lda product+5
+                sta num_hex+5
+                jsr h2d_48
+                lda num_dec
+                sta answer
+                lda num_dec+1
+                sta answer+1
+                lda num_dec+2
+                sta answer+2
+                lda num_dec+3
+                sta answer+3
+                lda num_dec+4
+                sta answer+4
+                lda num_dec+5
                 sta answer+5
+                lda num_dec+6
+                sta answer+6
+                lda num_dec+7
+                sta answer+7
                 jsr rev_prnt_bytes
 forever         jmp forever
 
@@ -46,8 +63,10 @@ z_loop          !byte $00
 multiplier      !byte $00, $00
 multiplicand    !byte $00, $00, $00, $00
 product         !byte $00, $00, $00, $00, $00, $00
-answer          !byte $00, $00, $00, $00, $00, $00
-answer_length   !byte $06
+num_hex         !byte $00, $00, $00, $00, $00, $00
+num_dec         !byte $00, $00, $00, $00, $00, $00, $00, $00
+answer          !byte $00, $00, $00, $00, $00, $00, $00, $00
+answer_length   !byte $08
 
 ;importing our reverse and print bytes routine
 ;   gives us the routine `rev_prnt_bytes` which expects the labels `answer` and `answer_length`
@@ -64,6 +83,10 @@ answer_length   !byte $06
 ;subtract one 2 byte number from another 2 byte number
 ;gives us the `sub_16_16` routine
 !source "inc/subtr-16-16.asm"
+
+;convert a 48-bit hex number into a decimal number 6 bytes -> 8 bytes
+;routine: `h2d_48` input: `num_hex` output: `num_dec`
+!source "inc/hex-to-dec-48.asm"
 
 ; set 2020 as the high number for our subtraction
 test_init       ldx #$00

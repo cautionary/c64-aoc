@@ -15,15 +15,12 @@ loop_text       lda answer,x        ;   converts those to their petscii value
                 jsr prep_char
                 sta $0630,y         ; ...and store in screen ram near the center
                 iny
-                lda answer,x
+next_nibble     lda answer,x
                 and #$0F
                 jsr prep_char
                 sta $0630,y
                 iny
-                lda #$20
-                sta $0630,y
-                iny
-                dex
+next_byte       dex
                 cpx #$FF
                 bne loop_text       ; loop if we are not done yet
                 rts

@@ -15,7 +15,7 @@
 
 d01p01          jsr clear_screen
                 jsr test_init
-                lda subtrahend
+                lda subtrahend          ;take the output of test_init and load it into the multiplication problem
                 sta multiplier
                 lda subtrahend+1
                 sta multiplier+1
@@ -23,15 +23,26 @@ d01p01          jsr clear_screen
                 sta multiplicand
                 lda difference+1
                 sta multiplicand+1
-                jsr mult_16_16
-                lda product
-                sta answer
+                jsr mult_16_16          ;do the multiplication
+                lda product             ;then take the result and convert it from hex to dec for output
+                sta num_hex
                 lda product+1
-                sta answer+1
+                sta num_hex+1
                 lda product+2
-                sta answer+2
+                sta num_hex+2
                 lda product+3
+                sta num_hex+3
+                jsr h2d_32
+                lda num_dec             ;take the decimal output and load it up for it to be printed as the answer
+                sta answer              
+                lda num_dec+1
+                sta answer+1
+                lda num_dec+2
+                sta answer+2
+                lda num_dec+3
                 sta answer+3
+                lda num_dec+4
+                sta answer+4
                 jsr rev_prnt_bytes
 forever         jmp forever
 
@@ -43,8 +54,10 @@ y_loop          !byte $00                   ;  of which block of input we are in
 multiplier      !word $0000
 multiplicand    !word $0000
 product         !byte $00, $00, $00, $00
-answer          !byte $00, $00, $00, $00
-answer_length   !byte $04
+num_hex         !byte $00, $00, $00, $00
+num_dec         !byte $00, $00, $00, $00, $00
+answer          !byte $00, $00, $00, $00, $00
+answer_length   !byte $05
 
 ;importing our reverse and print bytes routine
 ;   gives us the routine `rev_prnt_bytes` which expects the labels `answer` and `answer_length`
@@ -62,6 +75,10 @@ answer_length   !byte $04
 ;subtract one 2 byte number from another 2 byte number
 ;gives us the `sub_16_16` routine
 !source "inc/subtr-16-16.asm"
+
+;convert a 32-bit hex number into a decimal number 4 bytes -> 5 bytes
+;routine: `h2d_32` input: `num_hex` output: `num_dec`
+!source "inc/hex-to-dec-32.asm"
 
 ; set 2020 as the high number for our subtraction
 test_init       ldx #$00

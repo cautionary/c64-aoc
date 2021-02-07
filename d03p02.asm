@@ -141,31 +141,51 @@ mult_results    lda result_r1d1     ;loading result from right 1 down 1 as multi
                 sta multiplier+1
                 jsr mult_16_48
 
-                lda product         ;load that final product into the answer memory space
-                sta answer
+                lda product         ;load that final product into the hex to dec memory space
+                sta num_hex
                 lda product+1
-                sta answer+1
+                sta num_hex+1
                 lda product+2
-                sta answer+2
+                sta num_hex+2
                 lda product+3
-                sta answer+3
+                sta num_hex+3
                 lda product+4
-                sta answer+4
+                sta num_hex+4
                 lda product+5
-                sta answer+5
+                sta num_hex+5
                 lda product+6
-                sta answer+6
+                sta num_hex+6
                 lda product+7
-                sta answer+7
+                sta num_hex+7
 
+                jsr h2d_64
+
+                lda num_dec         ;load the converted number into the answer memory space
+                sta answer
+                lda num_dec+1
+                sta answer+1
+                lda num_dec+2
+                sta answer+2
+                lda num_dec+3
+                sta answer+3
+                lda num_dec+4
+                sta answer+4
+                lda num_dec+5
+                sta answer+5
+                lda num_dec+6
+                sta answer+6
+                lda num_dec+7
+                sta answer+7
+                lda num_dec+8
+                sta answer+8
+                lda num_dec+9
+                sta answer+9
                 jsr rev_prnt_bytes  ;call routine to print the answer
 forever         jmp forever
 
 cur_char_pos    = $FB          ;zeropage memory address for the current character we want to look at
 
 tree_count      !word $0000         ;every time we find a tree (# char), increment this value
-answer          !byte $00, $00, $00, $00, $00, $00, $00, $00
-answer_length   !byte $08
 num_right       !byte $00           ;since part 2 requries multiple combos of traversal, we'll store them here
 num_down        !byte $00           ;   instead of hardcoding them. this value will need to be multiples of 1F
 result_r1d1     !word $0000         ;storing each result separately
@@ -176,6 +196,10 @@ result_r1d2     !word $0000
 multiplier      !byte $00, $00
 multiplicand    !byte $00, $00, $00, $00, $00, $00
 product         !byte $00, $00, $00, $00, $00, $00, $00, $00
+num_hex         !byte $00, $00, $00, $00, $00, $00, $00, $00
+num_dec         !byte 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00
+answer          !byte 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00
+answer_length   !byte $0A
 
 ;importing our reverse and print bytes routine
 ;   gives us the routine `rev_prnt_bytes` which expects the labels `answer` and `answer_length`
@@ -187,6 +211,10 @@ product         !byte $00, $00, $00, $00, $00, $00, $00, $00
 
 ;importing our multiplication routine called `mult_16_32`
 !source "inc/mult-16-48.asm"
+
+;importing our hex to dec conversion routine
+;   gives us the routine `h2d_64` which converts `num_hex` to `num_dec`
+!source "inc/hex-to-dec-64.asm"
 
 ;we need to start at the first byte and move 3 bytes right and one byte down in each step
 ;   each row is 31 dec / 1F hex bytes

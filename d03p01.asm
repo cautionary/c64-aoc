@@ -17,22 +17,35 @@
 d03p01          jsr clear_screen
                 jsr init_test
                 lda tree_count
-                sta answer
+                sta num_hex
                 lda tree_count+1
+                sta num_hex+1
+                jsr h2d_16
+                lda num_dec
+                sta answer
+                lda num_dec+1
                 sta answer+1
+                lda num_dec+2
+                sta answer+2
                 jsr rev_prnt_bytes
 forever         jmp forever
 
 cur_char_pos    = $FB          ;zeropage memory address for the current character we want to look at
 
 tree_count      !word $0000         ;every time we find a tree (# char), increment this value
-answer          !word $0000         ;we'll move the answer here and it is used by the rev_pr_bt_2 routine
-answer_length   !byte $02
+num_hex         !word $0000         
+num_dec         !byte 00, 00, 00
+answer          !byte 00, 00, 00
+answer_length   !byte $03
 
 ;importing our reverse and print bytes routine
 ;   gives us the routine `rev_prnt_bytes` which expects the labels `answer` and `answer_length`
-
 !source "inc/reverse-and-print-bytes.asm"
+
+;importing our hex to dec conversion routine
+;   gives us the routine `h2d_16` which converts `num_hex` to `num_dec`
+!source "inc/hex-to-dec-16.asm"
+
 
 ;importing our clear screen routine called `clear_screen`
 !source "inc/clear-screen.asm"
