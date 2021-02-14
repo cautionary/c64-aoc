@@ -13,7 +13,7 @@ For both part 01 and 02, the leading 0s will need to be removed beore entering t
 ## Day 02
 Day 2's input is a list of strings that contain alphanumeric and symbol characters. The file `input-d02.asm` shows how to get acme to treat them as PETSCII strings. Add a `!` character at the end, and that tells the program that it is done parsing the input. 
 
-Only part 1 has been solved so far. Similar to Day 01, leading 0s will need to be removed beore entering the answer in AoC.
+Similar to Day 01, leading 0s will need to be removed beore entering the answer in AoC.
 
 ## Day 03
 
